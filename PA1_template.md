@@ -111,6 +111,7 @@ na_count
 ```
 
 ### 2. Devise a strategy for filling in all of the missing values in the dataset. 
+#### applied values to na using mean of intervals
 
 ```r
 colnames(zdt)<-c("interval","steps")
