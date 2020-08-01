@@ -7,19 +7,99 @@ output:
 
 
 ## Loading and preprocessing the data
+```{r unzip, cache=TRUE}
 
+x<-read.csv("activity.csv")
+###load activity.csv file
+ x$date<-as.Date(x$date,"%Y-%m-%d")
+```
 
 
 ## What is mean total number of steps taken per day?
+
+### 1.Calculate the total number of steps taken per day
+```{r mean-day,}
+tapply(x$steps, x$date, sum)->y
+y
+```
+### 2.Make a histogram of the total number of steps taken each day
+```{r histogram, }
+hist(y, breaks = 20)
+```
+### 3.Calculate and report the mean and median of the total number of steps taken per day
+```{r mean-median,}
+median(y,na.rm=TRUE)
+mean(y,na.rm=TRUE)
+```
 
 
 
 ## What is the average daily activity pattern?
 
+```{r averageday, }
+na.omit(x)->x1
+tapply(x1$steps,x1$interval,mean)->z
+plot(unique(x1$interval),z,type="l")
+```
+
+### Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
+```{r maxvalue,}
+as.data.frame.table(z)->zdt
+as.integer(as.character(zdt$Var1))->zdt$Var1
+max(zdt$Freq)->max
+zdt[zdt$Freq==max,1]
+```
 
 
 ## Imputing missing values
+### 1.Calculate and report the total number of missing values in the dataset
 
+```{r na,}
+na_count <-sapply(x, function(y) sum(length(which(is.na(y)))))
+na_count
+```
 
+### 2. Devise a strategy for filling in all of the missing values in the dataset. 
+```{r nafill,}
+colnames(zdt)<-c("interval","steps")
+na<-x[is.na(x$steps),]
+newnadata<-merge(na, zdt, by=c("interval"))
+newnadata<-newnadata[,-2]
+colnames(newnadata)[3]<-"steps"
+
+```
+### 3.Create a new dataset that is equal to the original dataset but with the missing data filled in.
+```{r newdata,}
+rbind(x1,newnadata)->newdata
+```
+### 4.hist of mean and median of new and old na data
+```{r newhist,}
+tapply(newdata$steps,newdata$date, sum)->newsum
+mean(newsum)
+median(newsum)
+hist(newsum)
+hist(y,col = "black",add=T)
+```
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+```{r newdatafinal,}
+newdata$DayCategory <- ifelse(weekdays(newdata$date) %in% c("Saturday", "Sunday"), "Weekend", "Weekday")
+```
+
+
+```{r weekhist,}
+library(plyr)
+library(lattice)
+final<- ddply(newdata, .(interval, DayCategory), summarize, Avg = mean(steps))
+head(final)
+##Plot data in a panel plot
+xyplot(Avg~interval|DayCategory, final, type="l",  layout = c(1,2),
+       main="Average Steps per Interval Based on Type of Day", 
+       ylab="Average Number of Steps", xlab="Interval")
+
+```
+
+
+
+
